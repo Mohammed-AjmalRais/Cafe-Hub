@@ -5,6 +5,7 @@ import com.smartcafe.backend.dto.OrderRequest;
 import com.smartcafe.backend.entity.Order;
 import com.smartcafe.backend.entity.OrderItem;
 import com.smartcafe.backend.entity.MenuItem;
+import com.smartcafe.backend.exception.ResourceNotFoundException;
 import com.smartcafe.backend.repository.MenuItemRepository;
 import com.smartcafe.backend.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +23,6 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final MenuItemRepository menuItemRepository;
     private final SimpMessagingTemplate messagingTemplate;
-    private final GoogleSheetsService googleSheetsService;
 
     @Transactional
     public Order createOrder(OrderRequest request) {
@@ -43,10 +43,10 @@ public class OrderService {
 
         for (OrderItemRequest itemReq : request.getItems()) {
             MenuItem menuItem = menuItemRepository.findById(itemReq.getMenuItemId())
-                    .orElseThrow(() -> new RuntimeException("Menu item not found: " + itemReq.getMenuItemId()));
+                    .orElseThrow(() -> new ResourceNotFoundException("Menu item not found: " + itemReq.getMenuItemId()));
             
             if (!menuItem.isAvailable()) {
-                throw new RuntimeException("Menu item " + menuItem.getName() + " is out of stock.");
+                throw new IllegalArgumentException("Menu item " + menuItem.getName() + " is out of stock.");
             }
 
             double itemTotal = menuItem.getPrice() * itemReq.getQuantity();
@@ -79,16 +79,13 @@ public class OrderService {
         // Notify admins of a new order
         messagingTemplate.convertAndSend("/topic/orders", savedOrder);
 
-        // Sync with Google Sheets
-        googleSheetsService.syncOrder(savedOrder);
-
         return savedOrder;
     }
 
     @Transactional
     public Order updateOrderStatus(Long orderId, String status) {
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
 
         order.setStatus(status.toUpperCase());
         
@@ -105,16 +102,13 @@ public class OrderService {
         // Broadcast update to Admin dashboard
         messagingTemplate.convertAndSend("/topic/orders", updatedOrder);
 
-        // Sync updated details with Google Sheets
-        googleSheetsService.syncOrder(updatedOrder);
-
         return updatedOrder;
     }
 
     @Transactional
     public Order updateOrderPrepTime(Long orderId, Integer minutes) {
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
 
         order.setEstimatedPrepTime(minutes);
         Order updatedOrder = orderRepository.save(order);
@@ -128,7 +122,7 @@ public class OrderService {
     @Transactional
     public Order cancelOrder(Long orderId) {
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
 
         if (!"RECEIVED".equalsIgnoreCase(order.getStatus())) {
             throw new IllegalStateException("Order is already being prepared or served and cannot be cancelled.");
@@ -145,9 +139,6 @@ public class OrderService {
         // Broadcast update to Admin dashboard
         messagingTemplate.convertAndSend("/topic/orders", updatedOrder);
 
-        // Sync updated details with Google Sheets
-        googleSheetsService.syncOrder(updatedOrder);
-
         return updatedOrder;
     }
 
@@ -157,6 +148,6 @@ public class OrderService {
 
     public Order getOrderById(Long orderId) {
         return orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
     }
 }

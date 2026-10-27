@@ -167,31 +167,6 @@ export const api = {
     return res.json();
   },
 
-  // Settings APIs
-  getPublicSettings: async () => {
-    const res = await fetch(`${BASE_URL}/settings/public`);
-    if (!res.ok) throw new Error('Failed to fetch public settings');
-    return res.json();
-  },
-
-  getAdminSettings: async () => {
-    const res = await fetch(`${BASE_URL}/admin/settings`, {
-      headers: getHeaders()
-    });
-    if (!res.ok) throw new Error('Failed to fetch admin settings');
-    return res.json();
-  },
-
-  updateAdminSettings: async (settings) => {
-    const res = await fetch(`${BASE_URL}/admin/settings`, {
-      method: 'PUT',
-      headers: getHeaders(),
-      body: JSON.stringify(settings)
-    });
-    if (!res.ok) throw new Error('Failed to update settings');
-    return res.json();
-  },
-
   adminChangePassword: async (newPassword) => {
     const res = await fetch(`${BASE_URL}/admin/dashboard/change-password`, {
       method: 'POST',

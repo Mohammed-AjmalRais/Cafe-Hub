@@ -3,7 +3,9 @@ package com.smartcafe.backend.controller;
 import com.smartcafe.backend.dto.OrderRequest;
 import com.smartcafe.backend.entity.Order;
 import com.smartcafe.backend.service.OrderService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,9 +21,9 @@ public class OrderController {
 
     // Public API: Place a new order
     @PostMapping("/orders/create")
-    public ResponseEntity<Order> placeOrder(@RequestBody OrderRequest orderRequest) {
+    public ResponseEntity<Order> placeOrder(@Valid @RequestBody OrderRequest orderRequest) {
         Order createdOrder = orderService.createOrder(orderRequest);
-        return ResponseEntity.ok(createdOrder);
+        return new ResponseEntity<>(createdOrder, HttpStatus.CREATED);
     }
 
     // Public API: Cancel order

@@ -1,10 +1,8 @@
 package com.smartcafe.backend.config;
 
 import com.smartcafe.backend.entity.MenuItem;
-import com.smartcafe.backend.entity.SystemSetting;
 import com.smartcafe.backend.entity.User;
 import com.smartcafe.backend.repository.MenuItemRepository;
-import com.smartcafe.backend.repository.SystemSettingRepository;
 import com.smartcafe.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
@@ -20,7 +18,6 @@ public class DatabaseSeeder implements CommandLineRunner {
 
     private final UserRepository userRepository;
     private final MenuItemRepository menuItemRepository;
-    private final SystemSettingRepository systemSettingRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -47,17 +44,7 @@ public class DatabaseSeeder implements CommandLineRunner {
             }
         }
 
-        // 2. Seed System Settings
-        if (systemSettingRepository.count() == 0) {
-            systemSettingRepository.save(new SystemSetting("google_sheets_webhook", "https://script.google.com/macros/s/YOUR_MOCK_URL/exec"));
-            systemSettingRepository.save(new SystemSetting("emailjs_service_id", ""));
-            systemSettingRepository.save(new SystemSetting("emailjs_template_id", ""));
-            systemSettingRepository.save(new SystemSetting("emailjs_public_key", ""));
-            systemSettingRepository.save(new SystemSetting("admin_email", "admin@smartcafe.com"));
-            System.out.println(">>> Database seeded: System settings initialized.");
-        }
-
-        // 3. Seed default Menu Items (INR values and auto-upgrade from old USD values)
+        // 2. Seed default Menu Items (INR values and auto-upgrade from old USD values)
         if (menuItemRepository.count() > 0) {
             // Check if items are in USD (maximum price is very low, e.g., < 25.0)
             boolean isUsd = menuItemRepository.findAll().stream()

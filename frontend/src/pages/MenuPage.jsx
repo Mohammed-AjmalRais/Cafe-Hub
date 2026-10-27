@@ -82,56 +82,6 @@ export default function MenuPage() {
     return matchesSearch && matchesCategory;
   });
 
-  const sendEmailJSAlert = async (order) => {
-    try {
-      const settings = await api.getPublicSettings();
-      const serviceId = settings.emailjs_service_id;
-      const templateId = settings.emailjs_template_id;
-      const publicKey = settings.emailjs_public_key;
-      const adminEmail = settings.admin_email || 'admin@smartcafe.com';
-
-      if (!serviceId || !templateId || !publicKey) {
-        console.info('EmailJS integration is not configured in Admin Settings. Skipping notification email.');
-        return;
-      }
-
-      // Build item list summary
-      const itemsSummary = order.orderItems ? order.orderItems.map(item => 
-        `x${item.quantity} ${item.menuItem?.name || 'Item'}`
-      ).join(', ') : 'Cafe Order';
-
-      const emailPayload = {
-        service_id: serviceId,
-        template_id: templateId,
-        user_id: publicKey,
-        template_params: {
-          order_id: order.id,
-          table_number: order.tableNumber,
-          total_price: `₹${order.totalPrice.toFixed(2)}`,
-          payment_method: order.paymentMethod,
-          items_summary: itemsSummary,
-          admin_email: adminEmail,
-          created_at: new Date().toLocaleTimeString()
-        }
-      };
-
-      const emailRes = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(emailPayload)
-      });
-
-      if (emailRes.ok) {
-        console.log('>>> EmailJS alert successfully sent to Admin!');
-      } else {
-        const text = await emailRes.text();
-        console.warn('>>> EmailJS alert failed to send:', text);
-      }
-    } catch (err) {
-      console.warn('>>> EmailJS alert exception:', err);
-    }
-  };
-
   // 4. Handle Place Order
   const handlePlaceOrder = async () => {
     if (!tableNumber) {
@@ -169,9 +119,6 @@ export default function MenuPage() {
         savedOrders.push(result.id);
         localStorage.setItem('placedOrders', JSON.stringify(savedOrders));
       }
-      
-      // Async dispatch email notification to the administrator
-      sendEmailJSAlert(result);
 
       clearCart();
       setIsCartOpen(false);
